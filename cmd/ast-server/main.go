@@ -14,12 +14,17 @@ func main() {
 	http.HandleFunc("/parse", func(w http.ResponseWriter, r *http.Request) {
 		expr, err := promql.ParseExpr(r.FormValue("expr"))
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Error parsing expression: %v", err.Error()), http.StatusBadRequest)
+			errJSON, err := json.Marshal(map[string]string{"type": "error", "message": fmt.Sprintf("Expression incomplete or buggy: %v", err)})
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Error marshaling error JSON: %v", err), http.StatusInternalServerError)
+				return
+			}
+			http.Error(w, string(errJSON), http.StatusBadRequest)
 			return
 		}
-		buf, err := json.Marshal(expr)
+		buf, err := json.Marshal(translateAST(expr))
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Error marshaling AST: %v", err.Error()), http.StatusBadRequest)
+			http.Error(w, fmt.Sprintf("Error marshaling AST: %v", err), http.StatusBadRequest)
 			return
 		}
 		w.Write(buf)
