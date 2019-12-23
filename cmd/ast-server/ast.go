@@ -18,7 +18,7 @@ func translateAST(node promql.Expr) interface{} {
 			"type":     "aggregation",
 			"op":       n.Op.String(),
 			"expr":     translateAST(n.Expr),
-			"param":    translateAST(n.Expr),
+			"param":    translateAST(n.Param),
 			"grouping": sanitizeList(n.Grouping),
 			"without":  n.Without,
 		}
