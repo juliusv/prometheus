@@ -5,8 +5,10 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"regexp"
 
 	"github.com/prometheus/prometheus/promql"
+	"github.com/prometheus/prometheus/util/httputil"
 )
 
 func main() {
@@ -22,6 +24,11 @@ func main() {
 			http.Error(w, string(errJSON), http.StatusBadRequest)
 			return
 		}
+		regex, err := regexp.Compile("^(?:.*)$")
+		if err != nil {
+			panic(err)
+		}
+		httputil.SetCORS(w, regex, r)
 		buf, err := json.Marshal(translateAST(expr))
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Error marshaling AST: %v", err), http.StatusBadRequest)
