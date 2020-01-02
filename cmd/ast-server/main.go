@@ -4,11 +4,14 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"log"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"regexp"
 
 	"github.com/prometheus/prometheus/promql"
-	"github.com/prometheus/prometheus/util/httputil"
+	prom_httputil "github.com/prometheus/prometheus/util/httputil"
 )
 
 func main() {
@@ -28,7 +31,7 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		httputil.SetCORS(w, regex, r)
+		prom_httputil.SetCORS(w, regex, r)
 		buf, err := json.Marshal(translateAST(expr))
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Error marshaling AST: %v", err), http.StatusBadRequest)
@@ -36,5 +39,10 @@ func main() {
 		}
 		w.Write(buf)
 	})
+	prometheusURL, err := url.Parse("http://demo.robustperception.io:9090/")
+	if err != nil {
+		log.Fatalln("Error parsing Prometheus proxy URL:", err)
+	}
+	http.Handle("/api/v1/", httputil.NewSingleHostReverseProxy(prometheusURL))
 	http.ListenAndServe(*listenAddr, nil)
 }
