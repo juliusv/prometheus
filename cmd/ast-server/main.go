@@ -16,6 +16,8 @@ import (
 
 func main() {
 	listenAddr := flag.String("listen-addr", ":8000", "Web API listen address.")
+	flag.Parse()
+
 	http.HandleFunc("/parse", func(w http.ResponseWriter, r *http.Request) {
 		expr, err := promql.ParseExpr(r.FormValue("expr"))
 		if err != nil {
