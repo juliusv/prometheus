@@ -16,7 +16,13 @@ import (
 
 func main() {
 	listenAddr := flag.String("listen-addr", ":8000", "Web API listen address.")
+	promURL := flag.String("prometheus-url", "http://demo.robustperception.io:9090/", "Prometheus server to forward API queries to.")
 	flag.Parse()
+
+	prometheusURL, err := url.Parse(*promURL)
+	if err != nil {
+		log.Fatalln("Error parsing Prometheus proxy URL:", err)
+	}
 
 	http.HandleFunc("/parse", func(w http.ResponseWriter, r *http.Request) {
 		expr, err := promql.ParseExpr(r.FormValue("expr"))
@@ -41,10 +47,6 @@ func main() {
 		}
 		w.Write(buf)
 	})
-	prometheusURL, err := url.Parse("http://demo.robustperception.io:9090/")
-	if err != nil {
-		log.Fatalln("Error parsing Prometheus proxy URL:", err)
-	}
 	http.Handle("/api/v1/", httputil.NewSingleHostReverseProxy(prometheusURL))
 	http.ListenAndServe(*listenAddr, nil)
 }
