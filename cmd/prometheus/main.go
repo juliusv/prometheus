@@ -460,6 +460,7 @@ func main() {
 					// The only error can be a bad pattern.
 					return errors.Wrapf(err, "error retrieving rule files for %s", pat)
 				}
+				level.Info(logger).Log("msg", "Found rule files for pattern", "pattern", pat, "files", fs)
 				files = append(files, fs...)
 			}
 			return ruleManager.Update(

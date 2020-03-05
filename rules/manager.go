@@ -924,6 +924,7 @@ func (m *Manager) LoadGroups(
 	shouldRestore := !m.restored
 
 	for _, fn := range filenames {
+		level.Info(m.logger).Log("msg", "Loading rule file...", "file", fn)
 		rgs, errs := rulefmt.ParseFile(fn)
 		if errs != nil {
 			return nil, errs
@@ -962,10 +963,13 @@ func (m *Manager) LoadGroups(
 				))
 			}
 
+			level.Info(m.logger).Log("msg", "Loaded rule group from file", "file", fn, "group", rg.Name, "num_rules", len(rules))
+
 			groups[groupKey(fn, rg.Name)] = NewGroup(rg.Name, fn, itv, rules, shouldRestore, m.opts)
 		}
 	}
 
+	level.Info(m.logger).Log("msg", "Loaded all rule groups", "num_groups", len(groups))
 	return groups, nil
 }
 
