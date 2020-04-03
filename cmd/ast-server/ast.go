@@ -4,16 +4,16 @@ import (
 	"strconv"
 
 	"github.com/prometheus/prometheus/pkg/labels"
-	"github.com/prometheus/prometheus/promql"
+	"github.com/prometheus/prometheus/promql/parser"
 )
 
-func translateAST(node promql.Expr) interface{} {
+func translateAST(node parser.Expr) interface{} {
 	if node == nil {
 		return nil
 	}
 
 	switch n := node.(type) {
-	case *promql.AggregateExpr:
+	case *parser.AggregateExpr:
 		return map[string]interface{}{
 			"type":     "aggregation",
 			"op":       n.Op.String(),
@@ -22,7 +22,7 @@ func translateAST(node promql.Expr) interface{} {
 			"grouping": sanitizeList(n.Grouping),
 			"without":  n.Without,
 		}
-	case *promql.BinaryExpr:
+	case *parser.BinaryExpr:
 		var matching interface{}
 		if m := n.VectorMatching; m != nil {
 			matching = map[string]interface{}{
@@ -41,7 +41,7 @@ func translateAST(node promql.Expr) interface{} {
 			"matching": matching,
 			"bool":     n.ReturnBool,
 		}
-	case *promql.Call:
+	case *parser.Call:
 		args := []interface{}{}
 		for _, arg := range n.Args {
 			args = append(args, translateAST(arg))
@@ -57,15 +57,16 @@ func translateAST(node promql.Expr) interface{} {
 			},
 			"args": args,
 		}
-	case *promql.MatrixSelector:
+	case *parser.MatrixSelector:
+		vs := n.VectorSelector.(*parser.VectorSelector)
 		return map[string]interface{}{
 			"type":     "matrixSelector",
-			"name":     n.Name,
+			"name":     vs.Name,
 			"range":    n.Range.Milliseconds(),
-			"offset":   n.Offset.Milliseconds(),
-			"matchers": translateMatchers(n.LabelMatchers),
+			"offset":   vs.Offset.Milliseconds(),
+			"matchers": translateMatchers(vs.LabelMatchers),
 		}
-	case *promql.SubqueryExpr:
+	case *parser.SubqueryExpr:
 		return map[string]interface{}{
 			"type":   "subquery",
 			"expr":   translateAST(n.Expr),
@@ -73,28 +74,28 @@ func translateAST(node promql.Expr) interface{} {
 			"offset": n.Offset.Milliseconds(),
 			"step":   n.Step.Milliseconds(),
 		}
-	case *promql.NumberLiteral:
+	case *parser.NumberLiteral:
 		return map[string]string{
 			"type": "numberLiteral",
 			"val":  strconv.FormatFloat(n.Val, 'f', -1, 64),
 		}
-	case *promql.ParenExpr:
+	case *parser.ParenExpr:
 		return map[string]interface{}{
 			"type": "parenExpr",
 			"expr": translateAST(n.Expr),
 		}
-	case *promql.StringLiteral:
+	case *parser.StringLiteral:
 		return map[string]interface{}{
 			"type": "stringLiteral",
 			"val":  n.Val,
 		}
-	case *promql.UnaryExpr:
+	case *parser.UnaryExpr:
 		return map[string]interface{}{
 			"type": "unaryExpr",
 			"op":   n.Op.String(),
 			"expr": translateAST(n.Expr),
 		}
-	case *promql.VectorSelector:
+	case *parser.VectorSelector:
 		return map[string]interface{}{
 			"type":     "vectorSelector",
 			"name":     n.Name,

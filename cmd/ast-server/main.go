@@ -10,7 +10,7 @@ import (
 	"net/url"
 	"regexp"
 
-	"github.com/prometheus/prometheus/promql"
+	"github.com/prometheus/prometheus/promql/parser"
 	prom_httputil "github.com/prometheus/prometheus/util/httputil"
 )
 
@@ -31,7 +31,7 @@ func main() {
 	}
 
 	http.HandleFunc("/parse", func(w http.ResponseWriter, r *http.Request) {
-		expr, err := promql.ParseExpr(r.FormValue("expr"))
+		expr, err := parser.ParseExpr(r.FormValue("expr"))
 		if err != nil {
 			errJSON, err := json.Marshal(map[string]string{"type": "error", "message": fmt.Sprintf("Expression incomplete or buggy: %v", err)})
 			if err != nil {
