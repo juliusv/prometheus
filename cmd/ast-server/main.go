@@ -16,8 +16,14 @@ import (
 
 func main() {
 	listenAddr := flag.String("listen-addr", ":8000", "Web API listen address.")
+	linkURL := flag.String("shortlink-url", "http://localhost:8282/", "URL of the short link generator.")
 	promURL := flag.String("prometheus-url", "http://demo.robustperception.io:9090/", "Prometheus server to forward API queries to.")
 	flag.Parse()
+
+	shortLinkURL, err := url.Parse(*linkURL)
+	if err != nil {
+		log.Fatalln("Error parsing short link generator proxy URL:", err)
+	}
 
 	prometheusURL, err := url.Parse(*promURL)
 	if err != nil {
@@ -47,6 +53,8 @@ func main() {
 		}
 		w.Write(buf)
 	})
+	http.Handle("/link", httputil.NewSingleHostReverseProxy(shortLinkURL))
+	// TODO: Remove.
 	http.Handle("/api/v1/", httputil.NewSingleHostReverseProxy(prometheusURL))
 	http.ListenAndServe(*listenAddr, nil)
 }
